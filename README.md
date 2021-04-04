@@ -20,7 +20,7 @@ This is a Client - Server type of Video streaming application in Python. It is a
   </ul>
 </blockquote>
 
-## Exmaple:
+## Example:
 ### Start the server:
     python Server.py 1025
 

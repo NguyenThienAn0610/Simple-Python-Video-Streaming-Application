@@ -13,14 +13,14 @@ This is a Client - Server type of Video streaming application in Python. It is a
 <blockquote>
   Where:
   <ul>
-    <li><strong>server_host</strong> is the ip of  the machine that the server is running.</li>
+    <li><strong>server_host</strong> is the **ip** of  the machine that the server is running.</li>
     <li><strong>server_port</strong> is the port the client is listening on.</li>
     <li><strong>RTP_port</strong> is the port that the RTP packets are received.</li>
     <li><strong>video_file</strong> is the file you wish to watch (here we use a mjpeg file).</li>
   </ul>
 </blockquote>
 
-## Example:
+## Exmaple:
 ### Start the server:
     python Server.py 1025
 

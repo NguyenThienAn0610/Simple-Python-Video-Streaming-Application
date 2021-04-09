@@ -7,10 +7,6 @@ from RtpPacket import RtpPacket
 
 CACHE_FILE_NAME = "cache-"
 CACHE_FILE_EXT = ".jpg"
-test = "test"
-
-
-# Hello
 
 class Client:
     INIT = 0
@@ -71,9 +67,15 @@ class Client:
         self.teardown["command"] = self.exitClient
         self.teardown.grid(row=1, column=3, padx=2, pady=2)
 
+        # Create Describe button
+        self.describe = Button(self.master, width=10, padx=3, pady=3)
+        self.describe["text"] = "Describe"
+        self.describe["command"] = self.describeMovie
+        self.describe.grid(row=1, column=4, padx=2, pady=2)
+
         # Create a label to display the movie
         self.label = Label(self.master, height=19)
-        self.label.grid(row=0, column=0, columnspan=4, sticky=W + E + N + S, padx=5, pady=5)
+        self.label.grid(row=0, column=0, columnspan=5, sticky=W + E + N + S, padx=5, pady=5)
 
     def setupMovie(self):
         """Setup button handler."""
@@ -100,7 +102,6 @@ class Client:
 
     def playMovie(self):
         """Play button handler."""
-        # print("")
         if self.state == self.INIT:
             self.sendRtspRequest(self.SETUP)
             # self.sendRtspRequest(self.PLAY)
@@ -115,13 +116,19 @@ class Client:
             self.playEvent.clear()
             self.sendRtspRequest(self.PLAY)
 
+    def describeMovie(self):
+        description = open("description.txt", "w")
+        description.write("File name: " + self.fileName + "\n")
+        description.write("RTP Port:" + str(self.rtpPort) + "\n")
+        description.write("RTSP protocol version: 1.0\n")
+        description.write("Transport layer protocol: UDP")
+
     def listenRtp(self):
         """Listen for RTP packets."""
         # TODO
         while True:
             try:
                 data, addr = self.rtpSocket.recvfrom(20480)
-
                 if data:
                     rtpPacket = RtpPacket()
                     rtpPacket.decode(data)
@@ -269,7 +276,6 @@ class Client:
             # Keep track of the sent request.
             # self.requestSent = ...
             self.requestSent = self.TEARDOWN
-
         else:
             return
 
@@ -317,7 +323,6 @@ class Client:
                         # self.state = ...
                         self.state = self.READY
                         # Open RTP port.
-                        # self.openRtpPort()
                         print("Setting Up RtpPort for Video Stream")
                         self.openRtpPort()
 

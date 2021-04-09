@@ -18,8 +18,7 @@ class Server:
         # Receive client info (address,port) through RTSP/TCP session
         while True:
             clientInfo = {}
-            clientInfo[
-                'rtspSocket'] = rtspSocket.accept()  # this accept {SockID,tuple object},tuple object = {clinet_addr,intNum}!!!
+            clientInfo['rtspSocket'] = rtspSocket.accept()  # this accept {SockID,tuple object},tuple object = {clinet_addr,intNum}!!!
 
             ServerWorker(clientInfo).run()
 

@@ -34,7 +34,7 @@ class ServerWorker:
         """Receive RTSP request from the client."""
         connSocket = self.clientInfo['rtspSocket'][0]
         while True:
-            data = connSocket.recv(256)  ###
+            data = connSocket.recv(256)
             if data:
                 print('-' * 60 + "\nData received:\n" + '-' * 60)
                 self.processRtspRequest(data)

@@ -1,4 +1,3 @@
-__author__ = 'Tibbers'
 from tkinter import *
 import tkinter.messagebox
 from PIL import Image, ImageTk
@@ -8,6 +7,8 @@ from RtpPacket import RtpPacket
 
 CACHE_FILE_NAME = "cache-"
 CACHE_FILE_EXT = ".jpg"
+
+# Hello
 
 class Client:
 	INIT = 0
@@ -38,6 +39,7 @@ class Client:
 		self.frameNbr = 0
 		self.rtpSocket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 
+	# THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI
 	def createWidgets(self):
 		"""Build GUI."""
 		# Create Setup button
@@ -70,11 +72,13 @@ class Client:
 
 	def setupMovie(self):
 		"""Setup button handler."""
+		#TODO
 		if self.state == self.INIT:
 			self.sendRtspRequest(self.SETUP)
 
 	def exitClient(self):
 		"""Teardown button handler."""
+		#TODO
 		self.sendRtspRequest(self.TEARDOWN)
 		#self.handler()
 		self.master.destroy() # Close the gui window
@@ -85,11 +89,13 @@ class Client:
 
 	def pauseMovie(self):
 		"""Pause button handler."""
+		#TODO
 		if self.state == self.PLAYING:
 			self.sendRtspRequest(self.PAUSE)
 
 	def playMovie(self):
 		"""Play button handler."""
+		#TODO
 		if self.state == self.READY:
 			# Create a new thread to listen for RTP packets
 			print("Playing Movie")
@@ -99,6 +105,8 @@ class Client:
 			self.sendRtspRequest(self.PLAY)
 
 	def listenRtp(self):
+		"""Listen for RTP packets."""
+		#TODO
 		while True:
 			try:
 				data,addr = self.rtpSocket.recvfrom(20480)
@@ -139,7 +147,7 @@ class Client:
 
 	def writeFrame(self, data):
 		"""Write the received frame to a temp image file. Return the image file."""
-
+		#TODO
 		cachename = CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT
 
 		try:
@@ -158,6 +166,7 @@ class Client:
 
 	def updateMovie(self, imageFile):
 		"""Update the image file as video frame in the GUI."""
+		#TODO
 		try:
 			photo = ImageTk.PhotoImage(Image.open(imageFile)) #stuck here !!!!!!
 		except:
@@ -171,6 +180,7 @@ class Client:
 
 	def connectToServer(self):
 		"""Connect to the Server. Start a new RTSP/TCP session."""
+		#TODO
 		self.rtspSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		try:
 			self.rtspSocket.connect((self.serverAddr, self.serverPort))
@@ -253,10 +263,9 @@ class Client:
 		# Send the RTSP request using rtspSocket.
 		# ...
 
-#		print '\nData sent:\n' + request
-
 	def recvRtspReply(self):
 		"""Receive RTSP reply from the server."""
+		#TODO
 		while True:
 			reply = self.rtspSocket.recv(1024)
 
@@ -270,9 +279,8 @@ class Client:
 				break
 
 	def parseRtspReply(self, data):
-		print("Parsing Received Rtsp data...")
-
 		"""Parse the RTSP reply from the server."""
+		#TODO
 		data_bytes = data.decode() # An
 		lines = data_bytes.split('\n')
 		seqNum = int(lines[1].split(' ')[1])
@@ -323,7 +331,6 @@ class Client:
 		# Create a new datagram socket to receive RTP packets from the server
 		# self.rtpSocket = ...
 
-
 		# Set the timeout value of the socket to 0.5sec
 		# ...
 		self.rtpSocket.settimeout(0.5)
@@ -345,6 +352,7 @@ class Client:
 
 	def handler(self):
 		"""Handler on explicitly closing the GUI window."""
+		#TODO
 		self.pauseMovie()
 		if tkinter.messagebox.askokcancel("Quit?", "Are you sure you want to quit?"):
 			self.exitClient()

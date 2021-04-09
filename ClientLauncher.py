@@ -1,7 +1,8 @@
-__author__ = 'Tibbers'
 import sys
 from tkinter import Tk
 from Client import Client
+
+# Hello
 
 if __name__ == "__main__":
 	try:
@@ -15,8 +16,6 @@ if __name__ == "__main__":
 	root = Tk()
 
 	# Create a new client
-	#app = Client(root, serverAddr, serverPort, rtpPort, fileName)
-	app = Client(root,serverAddr,serverPort,rtpPort,fileName)
-	#app.master.title("RTPClient")
+	app = Client(root, serverAddr, serverPort, rtpPort, fileName)
 	app.master.title("RTPClient")
 	root.mainloop()

@@ -6,7 +6,6 @@ import sys, traceback, threading, socket
 from VideoStream import VideoStream
 from RtpPacket import RtpPacket
 
-
 class ServerWorker:
     SETUP = 'SETUP'
     PLAY = 'PLAY'
@@ -43,7 +42,9 @@ class ServerWorker:
         """Process RTSP request sent from the client."""
         # Get the request type
         data = data.decode()
+        print("!------data", data)
         request = data.split('\n')
+        print("!------request", request)
         line1 = request[0].split(' ')
         requestType = line1[0]
         # Get the media file name
@@ -58,7 +59,6 @@ class ServerWorker:
                 print("SETUP Request received\n")
 
                 try:
-
                     self.clientInfo['videoStream'] = VideoStream(filename)
                     self.state = self.READY
 

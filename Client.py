@@ -29,7 +29,6 @@ class Client:
     def __init__(self, master, serveraddr, serverport, rtpport, filename):
         self.master = master
         self.master.protocol("WM_DELETE_WINDOW", self.handler)
-        self.createWidgets()
         self.serverAddr = serveraddr
         self.serverPort = int(serverport)
         self.rtpPort = int(rtpport)
@@ -42,14 +41,17 @@ class Client:
         self.frameNbr = 0
         self.rtpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+        self.createWidgets()
+
     # THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI
     def createWidgets(self):
         """Build GUI."""
         # Create Setup button
-        self.setup = Button(self.master, width=20, padx=3, pady=3)
-        self.setup["text"] = "Setup"
-        self.setup["command"] = self.setupMovie
+        self.setup = Label(self.master, width=20, padx=3, pady=3)
+        self.setup["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / (self.frameNbr+0.00001)))
+        # self.setup["command"] = self.setupMovie
         self.setup.grid(row=1, column=0, padx=2, pady=2)
+        self.setup["font"] = "Helvetica"
 
         # Create Play button
         self.start = Button(self.master, width=20, padx=3, pady=3)
@@ -98,8 +100,14 @@ class Client:
 
     def playMovie(self):
         """Play button handler."""
+        # print("")
+        if self.state == self.INIT:
+            self.sendRtspRequest(self.SETUP)
+            # self.sendRtspRequest(self.PLAY)
+            print("")
+            self.playMovie()
         # TODO
-        if self.state == self.READY:
+        elif self.state == self.READY:
             # Create a new thread to listen for RTP packets
             print("Playing Movie")
             threading.Thread(target=self.listenRtp).start()
@@ -134,6 +142,8 @@ class Client:
                     if currFrameNbr > self.frameNbr:  # Discard the late packet
                         self.frameNbr = currFrameNbr
                         self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
+
+                    self.setup["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / self.frameNbr))
 
             except:
                 # Stop listening upon requesting PAUSE or TEARDOWN
@@ -188,7 +198,7 @@ class Client:
         try:
             self.rtspSocket.connect((self.serverAddr, self.serverPort))
         except:
-            tkMessageBox.showwarning('Connection Failed', 'Connection to \'%s\' failed.' % self.serverAddr)
+            tkinter.messagebox.showwarning('Connection Failed', 'Connection to \'%s\' failed.' % self.serverAddr)
 
     def sendRtspRequest(self, requestCode):
         """Send RTSP request to the server."""

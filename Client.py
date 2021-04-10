@@ -1,5 +1,6 @@
 from tkinter import *
 import tkinter.messagebox
+import tkinter.filedialog
 from PIL import Image, ImageTk
 import socket, threading, sys, traceback, os
 
@@ -40,18 +41,19 @@ class Client:
         self.connectToServer()
         self.frameNbr = 0
         self.rtpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
+        self.setupEvent = threading.Event()
+        self.playEvent = threading.Event()
         self.createWidgets()
 
     # THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI
     def createWidgets(self):
         """Build GUI."""
         # Create Setup button
-        self.setup = Label(self.master, width=20, padx=3, pady=3)
-        self.setup["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / (self.frameNbr+0.00001)))
+        self.loss_rate = Label(self.master, width=20, padx=3, pady=3)
+        self.loss_rate["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / (self.frameNbr + 0.00001)))
         # self.setup["command"] = self.setupMovie
-        self.setup.grid(row=1, column=0, padx=2, pady=2)
-        self.setup["font"] = "Helvetica"
+        self.loss_rate.grid(row=1, column=0, padx=2, pady=2)
+        self.loss_rate["font"] = "Helvetica"
 
         # Create Play button
         self.start = Button(self.master, width=20, padx=3, pady=3)
@@ -75,22 +77,81 @@ class Client:
         self.label = Label(self.master, height=19)
         self.label.grid(row=0, column=0, columnspan=4, sticky=W + E + N + S, padx=5, pady=5)
 
+        # Create browse button
+        self.browse = Button(self.master, width=20, padx=3, pady=3)
+        self.browse["text"] = "Browse file"
+        self.browse["command"] = self.browseMovie
+        self.browse.grid(row=1, column=4, sticky=W + E + N + S, padx=2, pady=2)
+
+        # # Create list for browsed file
+        # self.file = Label(self.master, width=20, padx=3, pady=3)
+        # self.file["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / (self.frameNbr + 0.00001)))
+        # # self.setup["command"] = self.setupMovie
+        # self.loss_rate.grid(row=1, column=0, padx=2, pady=2)
+        # self.loss_rate["font"] = "Helvetica"
+
+    def browseMovie(self):
+        self.fileName = tkinter.filedialog.askopenfilename(initialdir="D:\Github\Simple-Python-Video-Streaming-Application", title="Select a File",
+                                   filetypes=(("MJPEG files",
+                                               "*.mjpeg*"),
+                                              ("all files",
+                                               "*.*")))
+        self.fileName = self.fileName.split('/')[-1]
+        print("Browsed file name", self.fileName)
+        # self.state = self.INIT
+        # self.setupMovie()
+        self.setupEvent.set()
+        self.playEvent.set()
+        self.rtspSeq = 0
+        self.sessionId = 0
+        self.requestSent = -1
+        self.teardownAcked = 0
+        # self.rtpSocket.shutdown(socket.SHUT_RDWR)
+        # self.rtpSocket.close()
+        self.connectToServer()
+        self.frameNbr = 0
+        self.counter = 0
+        self.state = self.INIT
+        # self.sendRtspRequest(self.SETUP)
+
     def setupMovie(self):
         """Setup button handler."""
         # TODO
         if self.state == self.INIT:
+            print("Set up before playing")
             self.sendRtspRequest(self.SETUP)
+            # self.sendRtspRequest(self.PLAY)
+            print("")
+            self.setupEvent.set()
+            self.playEvent.set()
+            print("A Settttt")
 
     def exitClient(self):
         """Teardown button handler."""
         # TODO
         self.sendRtspRequest(self.TEARDOWN)
         # self.handler()
-        self.master.destroy()  # Close the gui window
+        # self.master.destroy()  # Close the gui window
         os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT)  # Delete the cache image from video
         rate = float(self.counter / self.frameNbr)
         print('-' * 60 + "\nRTP Packet Loss Rate :" + str(rate) + "\n" + '-' * 60)
-        sys.exit(0)
+        # self.setupEvent.set()
+        self.playEvent.set()
+        # self.setupEvent.clear()
+        # self.playEvent.clear()
+        self.rtspSeq = 0
+        self.sessionId = 0
+        self.requestSent = -1
+        self.teardownAcked = 0
+        # self.rtpSocket.shutdown(socket.SHUT_RDWR)
+        # self.rtpSocket.close()
+        self.connectToServer()
+        self.frameNbr = 0
+        self.counter = 0
+        self.state = self.INIT
+        # self.sendRtspRequest(self.SETUP)
+        print("This is state", self.state)
+        # sys.exit(0)
 
     def pauseMovie(self):
         """Pause button handler."""
@@ -101,24 +162,40 @@ class Client:
     def playMovie(self):
         """Play button handler."""
         # print("")
+        print("Playing: This is state", self.state)
         if self.state == self.INIT:
-            self.sendRtspRequest(self.SETUP)
+            print("Playing: Set up before playing")
             # self.sendRtspRequest(self.PLAY)
-            print("")
+            # print("")
+            self.setupEvent.set()
+            self.playEvent.set()
+            print("B Settttt")
+            # self.playEvent = threading.Event()
+            # self.playEvent.clear()
+            self.sendRtspRequest(self.SETUP)
             self.playMovie()
         # TODO
         elif self.state == self.READY:
             # Create a new thread to listen for RTP packets
             print("Playing Movie")
-            threading.Thread(target=self.listenRtp).start()
-            self.playEvent = threading.Event()
             self.playEvent.clear()
+            self.setupEvent.clear()
+            threading.Thread(target=self.listenRtp).start()
             self.sendRtspRequest(self.PLAY)
 
     def listenRtp(self):
         """Listen for RTP packets."""
         # TODO
+
         while True:
+            # if self.playEvent.isSet():
+            #     print("break1")
+            #     break
+            #
+            # if self.setupEvent.isSet():
+            #     print("break2")
+            #     break
+
             try:
                 data, addr = self.rtpSocket.recvfrom(20480)
 
@@ -143,20 +220,31 @@ class Client:
                         self.frameNbr = currFrameNbr
                         self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
 
-                    self.setup["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / self.frameNbr))
+                    self.loss_rate["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / self.frameNbr))
 
             except:
                 # Stop listening upon requesting PAUSE or TEARDOWN
                 print("Didn`t receive data!")
-                if self.playEvent.isSet():
-                    break
 
+                if self.playEvent.isSet():
+                    print("break1")
+                    break
                 # Upon receiving ACK for TEARDOWN request,
                 # close the RTP socket
                 if self.teardownAcked == 1:
                     self.rtpSocket.shutdown(socket.SHUT_RDWR)
                     self.rtpSocket.close()
                     break
+
+                if self.playEvent.isSet():
+                    print("break1")
+                    break
+
+                if self.setupEvent.isSet():
+                    print("break2")
+                    break
+
+
 
     def writeFrame(self, data):
         """Write the received frame to a temp image file. Return the image file."""
@@ -217,6 +305,7 @@ class Client:
             # request = ...
             request = "SETUP " + str(self.fileName) + "\n" + str(self.rtspSeq) + "\n" + " RTSP/1.0 RTP/UDP " + str(
                 self.rtpPort)
+            print(request)
             request_byte = request.encode()  # An
             self.rtspSocket.send(request_byte)
             # Keep track of the sent request.
@@ -280,16 +369,23 @@ class Client:
         """Receive RTSP reply from the server."""
         # TODO
         while True:
-            reply = self.rtspSocket.recv(1024)
+            try:
+                reply = self.rtspSocket.recv(1024)
 
-            if reply:
-                self.parseRtspReply(reply)
+                if reply:
+                    self.parseRtspReply(reply)
 
-            # Close the RTSP socket upon requesting Teardown
-            if self.requestSent == self.TEARDOWN:
-                self.rtspSocket.shutdown(socket.SHUT_RDWR)
-                self.rtspSocket.close()
-                break
+                # Close the RTSP socket upon requesting Teardown
+                if self.requestSent == self.TEARDOWN:
+                    self.rtspSocket.shutdown(socket.SHUT_RDWR)
+                    self.rtspSocket.close()
+                    break
+            except:
+                pass
+
+            # if self.setupEvent.isSet():
+            #     print("break 3")
+            #     break
 
     def parseRtspReply(self, data):
         """Parse the RTSP reply from the server."""
@@ -361,14 +457,22 @@ class Client:
             print("Bind RtpPort Success")
 
         except:
-            tkinter.messagebox.showwarning('Connection Failed', 'Connection to rtpServer failed...')
+            pass
+            # tkinter.messagebox.showwarning('Connection Failed', 'Connection to rtpServer failed...')
 
     def handler(self):
         """Handler on explicitly closing the GUI window."""
         # TODO
         self.pauseMovie()
         if tkinter.messagebox.askokcancel("Quit?", "Are you sure you want to quit?"):
-            self.exitClient()
+            self.sendRtspRequest(self.TEARDOWN)
+            # self.handler()
+            self.master.destroy()  # Close the gui window
+            os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT)  # Delete the cache image from video
+            self.playEvent.set()
+            self.setupEvent.set()
+            sys.exit(0)
+
         else:  # When the user presses cancel, resume playing.
             # self.playMovie()
             print("Playing Movie")

@@ -37,6 +37,7 @@ class ServerWorker:
             data = connSocket.recv(256)
             if data:
                 print('-' * 60 + "\nData received:\n" + '-' * 60)
+                print(data)
                 self.processRtspRequest(data)
 
     def processRtspRequest(self, data):

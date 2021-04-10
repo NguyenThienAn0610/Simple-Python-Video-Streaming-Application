@@ -17,12 +17,14 @@ class Client:
     INIT = 0
     READY = 1
     PLAYING = 2
+    SWITCHING = 3
     state = INIT
 
     SETUP = 0
     PLAY = 1
     PAUSE = 2
     TEARDOWN = 3
+    SWITCH = 4
 
     counter = 0
 
@@ -70,7 +72,7 @@ class Client:
         # Create Teardown button
         self.teardown = Button(self.master, width=20, padx=3, pady=3)
         self.teardown["text"] = "Teardown"
-        self.teardown["command"] = self.exitClient
+        self.teardown["command"] = self.teardownMovie
         self.teardown.grid(row=1, column=3, padx=2, pady=2)
 
         # Create a label to display the movie
@@ -79,7 +81,7 @@ class Client:
 
         # Create browse button
         self.browse = Button(self.master, width=20, padx=3, pady=3)
-        self.browse["text"] = "Browse file"
+        self.browse["text"] = "Switch"
         self.browse["command"] = self.browseMovie
         self.browse.grid(row=1, column=4, sticky=W + E + N + S, padx=2, pady=2)
 
@@ -91,67 +93,51 @@ class Client:
         # self.loss_rate["font"] = "Helvetica"
 
     def browseMovie(self):
-        self.fileName = tkinter.filedialog.askopenfilename(initialdir="D:\Github\Simple-Python-Video-Streaming-Application", title="Select a File",
+        self.teardownMovie()
+        self.fileName = tkinter.filedialog.askopenfilename(initialdir="./", title="Select a File",
                                    filetypes=(("MJPEG files",
                                                "*.mjpeg*"),
                                               ("all files",
                                                "*.*")))
         self.fileName = self.fileName.split('/')[-1]
         print("Browsed file name", self.fileName)
-        # self.state = self.INIT
-        # self.setupMovie()
+
+    def setupMovie(self):
+        """Setup button handler."""
+        # TODO
+        if self.state == self.INIT:
+            self.sendRtspRequest(self.SETUP)
+            self.setupEvent.set()
+            self.playEvent.set()
+
+    def teardownMovie(self):
+        """Teardown button handler."""
+        # TODO
+        self.pauseMovie()
+        self.sendRtspRequest(self.TEARDOWN)
+        self.teardownAcked = 1
+        try:
+            os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT)  # Delete the cache image from video
+        except:
+            pass
+        try:
+            rate = float(self.counter / self.frameNbr)
+            print('-' * 60 + "\nRTP Packet Loss Rate :" + str(rate) + "\n" + '-' * 60)
+        except (ZeroDivisionError):
+            print('-' * 60 + "\nRTP Packet Loss Rate :" + "0\n" + '-' * 60)
+
         self.setupEvent.set()
         self.playEvent.set()
         self.rtspSeq = 0
         self.sessionId = 0
         self.requestSent = -1
         self.teardownAcked = 0
-        # self.rtpSocket.shutdown(socket.SHUT_RDWR)
-        # self.rtpSocket.close()
         self.connectToServer()
         self.frameNbr = 0
         self.counter = 0
+        self.rtpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.state = self.INIT
-        # self.sendRtspRequest(self.SETUP)
-
-    def setupMovie(self):
-        """Setup button handler."""
-        # TODO
-        if self.state == self.INIT:
-            print("Set up before playing")
-            self.sendRtspRequest(self.SETUP)
-            # self.sendRtspRequest(self.PLAY)
-            print("")
-            self.setupEvent.set()
-            self.playEvent.set()
-            print("A Settttt")
-
-    def exitClient(self):
-        """Teardown button handler."""
-        # TODO
-        self.sendRtspRequest(self.TEARDOWN)
-        # self.handler()
-        # self.master.destroy()  # Close the gui window
-        os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT)  # Delete the cache image from video
-        rate = float(self.counter / self.frameNbr)
-        print('-' * 60 + "\nRTP Packet Loss Rate :" + str(rate) + "\n" + '-' * 60)
-        # self.setupEvent.set()
-        self.playEvent.set()
-        # self.setupEvent.clear()
-        # self.playEvent.clear()
-        self.rtspSeq = 0
-        self.sessionId = 0
-        self.requestSent = -1
-        self.teardownAcked = 0
-        # self.rtpSocket.shutdown(socket.SHUT_RDWR)
-        # self.rtpSocket.close()
-        self.connectToServer()
-        self.frameNbr = 0
-        self.counter = 0
-        self.state = self.INIT
-        # self.sendRtspRequest(self.SETUP)
-        print("This is state", self.state)
-        # sys.exit(0)
+        # print("This is state", self.state)
 
     def pauseMovie(self):
         """Pause button handler."""
@@ -161,17 +147,10 @@ class Client:
 
     def playMovie(self):
         """Play button handler."""
-        # print("")
-        print("Playing: This is state", self.state)
+        # print("Playing: This is state", self.state)
         if self.state == self.INIT:
             print("Playing: Set up before playing")
-            # self.sendRtspRequest(self.PLAY)
-            # print("")
-            self.setupEvent.set()
-            self.playEvent.set()
-            print("B Settttt")
-            # self.playEvent = threading.Event()
-            # self.playEvent.clear()
+            self.setupEvent.clear()
             self.sendRtspRequest(self.SETUP)
             self.playMovie()
         # TODO
@@ -188,14 +167,6 @@ class Client:
         # TODO
 
         while True:
-            # if self.playEvent.isSet():
-            #     print("break1")
-            #     break
-            #
-            # if self.setupEvent.isSet():
-            #     print("break2")
-            #     break
-
             try:
                 data, addr = self.rtpSocket.recvfrom(20480)
 
@@ -221,28 +192,23 @@ class Client:
                         self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
 
                     self.loss_rate["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / self.frameNbr))
-
             except:
                 # Stop listening upon requesting PAUSE or TEARDOWN
-                print("Didn`t receive data!")
+                print("Didn't receive data!")
 
                 if self.playEvent.isSet():
-                    print("break1")
-                    break
-                # Upon receiving ACK for TEARDOWN request,
-                # close the RTP socket
-                if self.teardownAcked == 1:
-                    self.rtpSocket.shutdown(socket.SHUT_RDWR)
-                    self.rtpSocket.close()
-                    break
-
-                if self.playEvent.isSet():
-                    print("break1")
+                    print("Continue to click")
                     break
 
                 if self.setupEvent.isSet():
-                    print("break2")
+                    # print("break2")
                     break
+                # Upon receiving ACK for TEARDOWN request,
+                # close the RTP socket
+            if self.teardownAcked == 1:
+                self.rtpSocket.shutdown(socket.SHUT_RDWR)
+                self.rtpSocket.close()
+                break
 
 
 
@@ -345,7 +311,8 @@ class Client:
         # Resume request
 
         # Teardown request
-        elif requestCode == self.TEARDOWN and not self.state == self.INIT:
+        # elif requestCode == self.TEARDOWN and not self.state == self.INIT:
+        elif requestCode == self.TEARDOWN:
             # Update RTSP sequence number.
             # ...
             self.rtspSeq = self.rtspSeq + 1
@@ -382,10 +349,9 @@ class Client:
                     break
             except:
                 pass
-
-            # if self.setupEvent.isSet():
-            #     print("break 3")
-            #     break
+            if self.setupEvent.isSet():
+                print("break 3")
+                break
 
     def parseRtspReply(self, data):
         """Parse the RTSP reply from the server."""
@@ -431,6 +397,7 @@ class Client:
 
                         # Flag the teardownAcked to close the socket.
                         self.teardownAcked = 1
+                        print("self.teardownAcked = 1")
 
     def openRtpPort(self):
         """Open RTP socket binded to a specified port."""
@@ -466,17 +433,26 @@ class Client:
         self.pauseMovie()
         if tkinter.messagebox.askokcancel("Quit?", "Are you sure you want to quit?"):
             self.sendRtspRequest(self.TEARDOWN)
-            # self.handler()
-            self.master.destroy()  # Close the gui window
-            os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT)  # Delete the cache image from video
             self.playEvent.set()
             self.setupEvent.set()
+            self.master.destroy()  # Close the gui window
+            self.teardownAcked = 1
+            try:
+                dir_name = "./"
+                directory = os.listdir(dir_name)
+
+                for file in directory:
+                    if file.endswith(CACHE_FILE_EXT) and file.startswith(CACHE_FILE_NAME):
+                        os.remove(os.path.join(dir_name, file))
+                # os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT)  # Delete the cache image from video
+            except OSError:
+                pass
+            print("Exit")
+            print("self.setupEvent.isSet() = ", self.setupEvent.isSet())
+
             sys.exit(0)
 
         else:  # When the user presses cancel, resume playing.
-            # self.playMovie()
             print("Playing Movie")
             threading.Thread(target=self.listenRtp).start()
-            # self.playEvent = threading.Event()
-            # self.playEvent.clear()
             self.sendRtspRequest(self.PLAY)

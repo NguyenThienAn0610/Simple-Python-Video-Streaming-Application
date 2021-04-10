@@ -26,6 +26,8 @@ class ServerWorker:
 
     def __init__(self, clientInfo):
         self.clientInfo = clientInfo
+        self.clientInfo['event'] = threading.Event()
+
 
     def run(self):
         threading.Thread(target=self.recvRtspRequest).start()

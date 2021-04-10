@@ -2,7 +2,6 @@ import sys, socket
 
 from ServerWorker import ServerWorker
 
-
 class Server:
 
     def main(self):

@@ -51,6 +51,9 @@ class Client:
         self.sendRtspRequest(self.LIST)
         self.setupEvent = threading.Event()
         self.playEvent = threading.Event()
+        self.buttonEvent = threading.Event()
+        self.setupEvent.set()
+        self.buttonEvent.set()
         self.createWidgets()
 
     # THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI
@@ -114,6 +117,8 @@ class Client:
         self.describe["text"] = "Describe"
         self.describe["command"] = self.describeMovie
         self.describe.grid(row=3, column=3, padx=2, pady=2)
+
+        threading.Thread(target=self.buttonController).start()
 
     def browseMovie(self):
         self.teardownMovie()
@@ -478,6 +483,7 @@ class Client:
         self.pauseMovie()
         if tkinter.messagebox.askokcancel("Quit?", "Are you sure you want to quit?"):
             self.sendRtspRequest(self.TEARDOWN)
+            self.buttonEvent.clear()
             self.playEvent.set()
             self.setupEvent.set()
             self.master.destroy()  # Close the gui window
@@ -501,3 +507,23 @@ class Client:
             print("Playing Movie")
             threading.Thread(target=self.listenRtp).start()
             self.sendRtspRequest(self.PLAY)
+
+    def buttonController(self):
+        while True:
+            if self.buttonEvent.isSet():
+                if not self.fileName == self.varList.get():
+                    self.start["state"] = 'disabled'
+                    self.pause["state"] = 'disabled'
+                    self.browse["state"] = 'normal'
+                else:
+                    self.start["state"] = 'normal'
+                    self.pause["state"] = 'normal'
+                    self.browse["state"] = 'disabled'
+
+                if self.requestSent == self.PLAY:
+                    self.dropbar["state"] = "disabled"
+                else:
+                    self.dropbar["state"] = "normal"
+            else:
+                print("thread dies")
+                break

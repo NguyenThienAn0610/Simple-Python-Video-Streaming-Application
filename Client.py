@@ -58,7 +58,6 @@ class Client:
         # Create Loss rate display
         self.loss_rate = Label(self.master, width=20, padx=3, pady=3)
         self.loss_rate["text"] = "Loss rate: {: .02f}%".format(0)
-        # self.setup["command"] = self.setupMovie
         self.loss_rate.grid(row=1, column=0, padx=2, pady=2)
         self.loss_rate["font"] = "Helvetica"
 
@@ -104,7 +103,6 @@ class Client:
         # Create FPS display
         self.fps = Label(self.master, width=20, padx=3, pady=3)
         self.fps["text"] = "FPS: {}%".format(0)
-        # self.setup["command"] = self.setupMovie
         self.fps.grid(row=2, column=0, padx=2, pady=2)
         self.fps["font"] = "Helvetica"
 
@@ -213,14 +211,14 @@ class Client:
                         traceback.print_exc(file=sys.stdout)
                         print('-' * 60)
 
-                    frameDiff = 1
+                    # frameDiff = 1
                     if currFrameNbr > self.frameNbr:  # Discard the late packet
-                        frameDiff = currFrameNbr - self.frameNbr
+                        # frameDiff = currFrameNbr - self.frameNbr
                         self.frameNbr = currFrameNbr
                         self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
                     self.endTime = time.time()
                     self.loss_rate["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / self.frameNbr))
-                    self.fps["text"] = "FPS: {}".format(int(frameDiff/(self.endTime - self.startTime)))
+                    self.fps["text"] = "FPS: {}".format(int(1/(self.endTime - self.startTime)))
             except:
                 # Stop listening upon requesting PAUSE or TEARDOWN
                 print("Didn't receive data!")

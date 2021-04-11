@@ -33,6 +33,7 @@ class RtpPacket:
         # Thus the length of the packet header is therefore 12 bytes
 
         # Above all done in ServerWorker.py
+
         # ...
         # header[] =
 
@@ -45,7 +46,7 @@ class RtpPacket:
         self.header[1] = self.header[1] | pt
 
         self.header[2] = seqnum >> 8
-        self.header[3] = seqnum
+        self.header[3] = seqnum & 0xFF
 
         self.header[4] = (timestamp >> 24) & 0xFF
         self.header[5] = (timestamp >> 16) & 0xFF

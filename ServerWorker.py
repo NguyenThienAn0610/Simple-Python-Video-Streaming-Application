@@ -2,23 +2,19 @@ import random, math
 import time
 from random import randint
 import sys, traceback, threading, socket
+import os
 
 from VideoStream import VideoStream
 from RtpPacket import RtpPacket
+
 
 class ServerWorker:
     SETUP = 'SETUP'
     PLAY = 'PLAY'
     PAUSE = 'PAUSE'
     TEARDOWN = 'TEARDOWN'
-<<<<<<< Updated upstream
-    DESCRIBE = 'DESCRIBE'
-    FORWARD = 'FORWARD'
-    BACKWARD = 'BACKWARD'
-=======
     LIST = 'LIST'
     DESCRIBE = 'DESCRIBE'
->>>>>>> Stashed changes
 
     INIT = 0
     READY = 1
@@ -28,17 +24,15 @@ class ServerWorker:
     OK_200 = 0
     FILE_NOT_FOUND_404 = 1
     CON_ERR_500 = 2
+    LIST_OK_200 = 3
 
     clientInfo = {}
 
     def __init__(self, clientInfo):
         self.clientInfo = clientInfo
-<<<<<<< Updated upstream
-=======
         self.clientInfo['event'] = threading.Event()
         self.clientInfo['totalFrame'] = 0
 
->>>>>>> Stashed changes
 
     def run(self):
         threading.Thread(target=self.recvRtspRequest).start()
@@ -52,10 +46,7 @@ class ServerWorker:
                 print('-' * 60 + "\nData received:\n" + '-' * 60)
                 self.processRtspRequest(data)
 
-<<<<<<< Updated upstream
-=======
     # ---------------------------------------------------
->>>>>>> Stashed changes
     def getFrameNum(self, filename):
         video = VideoStream(filename)
         frameNum = -1
@@ -63,28 +54,20 @@ class ServerWorker:
             frameNum = video.frameNbr()
             video.nextFrame()
         return frameNum
-<<<<<<< Updated upstream
-=======
     # ---------------------------------------------------
->>>>>>> Stashed changes
 
     def processRtspRequest(self, data):
         """Process RTSP request sent from the client."""
         # Get the request type
         data = data.decode()
-        print("!------data", data)
         request = data.split('\n')
-        print("!------request", request)
         line1 = request[0].split(' ')
-        print(line1)
         requestType = line1[0]
         # Get the media file name
         filename = line1[1]
         # Get the RTSP sequence number
         seq = request[1].split(' ')
 
-<<<<<<< Updated upstream
-=======
         # Process LIST request
         if requestType == self.LIST:
             fileList = []
@@ -96,17 +79,11 @@ class ServerWorker:
                 reply += file + ","
             self.replyRtsp(self.LIST_OK_200, reply)
 
->>>>>>> Stashed changes
         # Process SETUP request
         if requestType == self.SETUP:
             if self.state == self.INIT:
                 # Update state
                 print("SETUP Request received\n")
-<<<<<<< Updated upstream
-                try:
-                    frameNum = self.getFrameNum(filename)
-                    print("frameNum:", frameNum)
-=======
                 fileList = []
                 # ---------------------------------------------------
                 try:
@@ -118,7 +95,6 @@ class ServerWorker:
                     if file.endswith(".mjpeg") or file.endswith(".Mjpeg"):
                         fileList.append(file)
                 try:
->>>>>>> Stashed changes
                     self.clientInfo['videoStream'] = VideoStream(filename)
                     self.state = self.READY
                     file = open(filename, "rb")
@@ -176,10 +152,6 @@ class ServerWorker:
             print('-' * 60 + "\DESCRIBE Request Received\n" + '-' * 60)
             self.replyRtsp(self.OK_200, seq[0])
 
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
     def sendRtp(self):
         """Send RTP packets over UDP."""
         counter = 0
@@ -201,10 +173,6 @@ class ServerWorker:
                 try:
                     # address = 127.0.0.1 #self.clientInfo['rtspSocket'][0][0]
                     # port = '25000' #int(self.clientInfo['rtpPort'])
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
                     # address = self.clientInfo['rtspSocket'][1]   #!!!! this is a tuple object ("address" , "")
                     port = int(self.clientInfo['rtpPort'])
                     prb = math.floor(random.uniform(1, 100))
@@ -238,13 +206,14 @@ class ServerWorker:
 
     def replyRtsp(self, code, seq):
         """Send RTSP reply to the client."""
+        if code == self.LIST_OK_200:
+            reply = seq
+            connSocket = self.clientInfo['rtspSocket'][0]
+            reply_byte = reply.encode()  # An
+            connSocket.send(reply_byte)
+
         if code == self.OK_200:
-<<<<<<< Updated upstream
-            # print "200 OK"
-            reply = 'RTSP/1.0 200 OK\nCSeq: ' + seq + '\nSession: ' + str(self.clientInfo['session']) + '\n' + self.clientInfo["videoWeight"]
-=======
             reply = 'RTSP/1.0 200 OK\nCSeq: ' + seq + '\nSession: ' + str(self.clientInfo['session']) + '\n' + self.clientInfo["videoWeight"] + '\n' + str(self.clientInfo["totalFrame"])
->>>>>>> Stashed changes
             connSocket = self.clientInfo['rtspSocket'][0]
             reply_byte = reply.encode()  # An
             connSocket.send(reply_byte)

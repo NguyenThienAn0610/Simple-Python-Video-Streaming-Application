@@ -5,7 +5,11 @@ import tkinter.ttk as ttk
 from PIL import Image, ImageTk
 import datetime
 import time
+<<<<<<< Updated upstream
 import socket, threading, sys, traceback, os
+=======
+import datetime
+>>>>>>> Stashed changes
 
 from RtpPacket import RtpPacket
 
@@ -23,8 +27,14 @@ class Client:
     PLAY = 1
     PAUSE = 2
     TEARDOWN = 3
+<<<<<<< Updated upstream
     DESCRIBE = 4
     SWITCH = 5
+=======
+    SWITCH = 4
+    LIST = 5
+    DESCRIBE = 6
+>>>>>>> Stashed changes
 
     counter = 0
 
@@ -45,6 +55,11 @@ class Client:
         self.rtpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.timeInitiated = "0"
         self.videoWeight = "0"
+<<<<<<< Updated upstream
+=======
+        self.totalFrame = 1
+        self.sendRtspRequest(self.LIST)
+>>>>>>> Stashed changes
         self.setupEvent = threading.Event()
         self.playEvent = threading.Event()
         self.createWidgets()
@@ -52,11 +67,29 @@ class Client:
     # THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI
     def createWidgets(self):
         """Build GUI."""
+<<<<<<< Updated upstream
         # Create slot for loss rate text
         self.lossrate = Label(self.master, width=20, padx=3, pady=3, relief = SUNKEN)
         self.lossrate["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / (self.frameNbr + 0.00001)))
         self.lossrate.grid(row=2, column=0, padx=2, pady=2)
         self.lossrate["font"] = "Helvetica"
+=======
+
+        # Create a label to display the movie
+        self.label = Label(self.master, height=19)
+        self.label.grid(row=0, column=0, columnspan=4, sticky=W + E + N + S, padx=5, pady=5)
+
+        # Create Progress bar
+        self.progressbar = ttk.Progressbar(self.master, orient =  HORIZONTAL, length = 100, mode = 'determinate')
+        self.progressbar['value'] = 0
+        self.progressbar.grid(row=1, column=0, columnspan=4, sticky=W + E + N + S, padx=2, pady=2)
+
+        # Create Loss rate display
+        self.loss_rate = Label(self.master, width=20, padx=3, pady=3)
+        self.loss_rate["text"] = "Loss rate: {: .02f}%".format(0)
+        self.loss_rate.grid(row=2, column=0, padx=2, pady=2)
+        self.loss_rate["font"] = "Helvetica"
+>>>>>>> Stashed changes
 
         # Create Play button
         self.start = Button(self.master, width=20, padx=3, pady=3, relief = RAISED)
@@ -75,6 +108,7 @@ class Client:
         self.teardown["text"] = "Teardown"
         self.teardown["command"] = self.teardownMovie
         self.teardown.grid(row=2, column=3, padx=2, pady=2)
+<<<<<<< Updated upstream
 
         # Create browse button
         self.browse = Button(self.master, width=20, padx=3, pady=3)
@@ -118,6 +152,38 @@ class Client:
                                                "*.*")))
         self.fileName = self.fileName.split('/')[-1]
         print("Browsed file name", self.fileName)
+=======
+
+        # Create FPS display
+        self.fps = Label(self.master, width=20, padx=3, pady=3)
+        self.fps["text"] = "FPS: {}%".format(0)
+        self.fps.grid(row=3, column=0, padx=2, pady=2)
+        self.fps["font"] = "Helvetica"
+
+        # Create browse button
+        self.browse = Button(self.master, width=20, padx=3, pady=3)
+        self.browse["text"] = "Switch"
+        self.browse["command"] = self.browseMovie
+        self.browse.grid(row=3, column=1, sticky=W + E + N + S, padx=2, pady=2)
+
+        # Dropbar menu
+        self.varList = StringVar(self.master)
+        self.varList.set(self.fileName)
+        print(*self.fileList)
+        self.dropbar = OptionMenu(self.master, self.varList, *self.fileList)
+        self.dropbar.grid(row=3, column=2, sticky=W + E + N + S, padx=2, pady=2)
+
+        # Create Describe button
+        self.describe = Button(self.master, width=20, padx=3, pady=3, relief = RIDGE, cursor = "cross")
+        self.describe["text"] = "Describe"
+        self.describe["command"] = self.describeMovie
+        self.describe.grid(row=3, column=3, padx=2, pady=2)
+
+    def browseMovie(self):
+        self.teardownMovie()
+        print("Browsed file name", self.varList.get())
+        self.fileName = self.varList.get()
+>>>>>>> Stashed changes
 
     def setupMovie(self):
         """Setup button handler."""
@@ -165,10 +231,11 @@ class Client:
         if self.state == self.INIT:
             print("Playing: Set up before playing")
             self.setupEvent.clear()
+            self.timeInitiated = str(datetime.datetime.now())
             self.sendRtspRequest(self.SETUP)
-            self.playMovie()
+            # self.playMovie()
         # TODO
-        elif self.state == self.READY:
+        if self.state == self.READY:
             # Create a new thread to listen for RTP packets
             print("Playing Movie")
             self.playEvent.clear()
@@ -184,6 +251,7 @@ class Client:
             description.write("File name: " + self.fileName + "\n" + "RTP Port: "
                                 + str(self.rtpPort) + "\n" + "RTSP protocol version: 1.0\n"
                                 + "Transport layer protocol: UDP\n" + "Time started: " + self.timeInitiated + "\n"
+<<<<<<< Updated upstream
                                 + "Video weight: " + self.videoWeight + " Bytes\n" + "\nCurrent frame: " + str(self.frameNbr))
             tkinter.messagebox.showinfo('Description', "File name: "
                                         + self.fileName + "\n" + "RTP Port: " + str(self.rtpPort) + "\n" + "RTSP protocol version: 1.0\n"
@@ -195,18 +263,36 @@ class Client:
 
     def backwardMovie(self):
         pass
+=======
+                                + "Video weight: " + self.videoWeight + " Bytes\n" + "\nCurrent frame: " + str(self.frameNbr) + "\nTotal frame: " + str(self.totalFrame))
+            tkinter.messagebox.showinfo('Description', "File name: "
+                                        + self.fileName + "\n" + "RTP Port: " + str(self.rtpPort) + "\n" + "RTSP protocol version: 1.0\n"
+                                        + "Transport layer protocol: UDP\n" + "Time started: " + self.timeInitiated + '\n'
+                                        + "Video weight: " + self.videoWeight + " Bytes\n" + "Current frame: " + str(self.frameNbr) + "\nTotal frame: " + str(self.totalFrame))
+>>>>>>> Stashed changes
 
     def listenRtp(self):
         """Listen for RTP packets."""
         # TODO
+<<<<<<< Updated upstream
         while True:
             try:
+=======
+        startTime = time.time()
+        endTime = time.time()
+        while True:
+            try:
+                startTime = time.time()
+>>>>>>> Stashed changes
                 data, addr = self.rtpSocket.recvfrom(20480)
                 if data:
                     rtpPacket = RtpPacket()
                     rtpPacket.decode(data)
                     print("||Received Rtp Packet #" + str(rtpPacket.seqNum()) + "|| ")
+<<<<<<< Updated upstream
                     self.progressbar['value'] = self.frameNbr * 100 / 255
+=======
+>>>>>>> Stashed changes
                     try:
                         if self.frameNbr + 1 != rtpPacket.seqNum():
                             self.counter += 1
@@ -221,8 +307,15 @@ class Client:
                     if currFrameNbr > self.frameNbr:  # Discard the late packet
                         self.frameNbr = currFrameNbr
                         self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
+<<<<<<< Updated upstream
                     self.lossrate["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / self.frameNbr))
 
+=======
+                    endTime = time.time()
+                    self.loss_rate["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / self.frameNbr))
+                    self.fps["text"] = "FPS: {}".format(int(1/(endTime - startTime)))
+                    self.progressbar['value'] = self.frameNbr * 100 / self.totalFrame
+>>>>>>> Stashed changes
             except:
                 # Stop listening upon requesting PAUSE or TEARDOWN
                 print("Didn`t receive data!")
@@ -238,32 +331,26 @@ class Client:
                     self.rtpSocket.close()
                     break
 
-
-
     def writeFrame(self, data):
         """Write the received frame to a temp image file. Return the image file."""
         # TODO
         cachename = CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT
-
         try:
             file = open(cachename, "wb")
         except:
             print("file open error")
-
         try:
             file.write(data)
         except:
             print("file write error")
-
         file.close()
-
         return cachename
 
     def updateMovie(self, imageFile):
         """Update the image file as video frame in the GUI."""
         # TODO
         try:
-            photo = ImageTk.PhotoImage(Image.open(imageFile))  # stuck here !!!!!!
+            photo = ImageTk.PhotoImage(Image.open(imageFile))
         except:
             print("photo error")
             print('-' * 60)
@@ -351,6 +438,10 @@ class Client:
             # Keep track of the sent request.
             # self.requestSent = ...
             self.requestSent = self.TEARDOWN
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
         elif requestCode == self.DESCRIBE and self.state == self.READY:
             self.rtspSeq = self.rtspSeq + 1
             request = "DESCRIBE " + "\n" + str(self.rtspSeq)
@@ -358,7 +449,11 @@ class Client:
             self.rtspSocket.send(request_byte)
             print('-' * 60 + "\nDESCRIBE request sent...\n" + '-' * 60)
             self.requestSent = self.DESCRIBE
+<<<<<<< Updated upstream
             print("debug2", self.requestSent)
+=======
+
+>>>>>>> Stashed changes
         else:
             return
 
@@ -416,6 +511,10 @@ class Client:
                         # Open RTP port.
                         print("Setting Up RtpPort for Video Stream")
                         self.openRtpPort()
+<<<<<<< Updated upstream
+=======
+                        self.totalFrame = int(lines[4])
+>>>>>>> Stashed changes
                     elif self.requestSent == self.PLAY:
                         self.state = self.PLAYING
                         print('-' * 60 + "\nClient is PLAYING...\n" + '-' * 60)
@@ -427,6 +526,10 @@ class Client:
                         # self.state = ...
                         # Flag the teardownAcked to close the socket.
                         self.teardownAcked = 1
+<<<<<<< Updated upstream
+=======
+                        print("self.teardownAcked = 1")
+>>>>>>> Stashed changes
                     elif self.requestSent == self.DESCRIBE:
                         self.videoWeight = lines[3]
 

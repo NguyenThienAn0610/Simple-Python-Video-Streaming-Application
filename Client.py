@@ -50,6 +50,9 @@ class Client:
         self.sendRtspRequest(self.LIST)
         self.setupEvent = threading.Event()
         self.playEvent = threading.Event()
+        self.buttonEvent = threading.Event()
+        self.setupEvent.set()
+        self.buttonEvent.set()
         self.createWidgets()
 
     # THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI
@@ -64,18 +67,22 @@ class Client:
         # Create Play button
         self.start = Button(self.master, width=20, padx=3, pady=3)
         self.start["text"] = "Play"
+        self.start["background"] = 'green'
         self.start["command"] = self.playMovie
         self.start.grid(row=1, column=1, padx=2, pady=2)
 
         # Create Pause button
         self.pause = Button(self.master, width=20, padx=3, pady=3)
         self.pause["text"] = "Pause"
+        self.pause["background"] = 'yellow'
         self.pause["command"] = self.pauseMovie
         self.pause.grid(row=1, column=2, padx=2, pady=2)
+        # self.pause["state"] = 'disabled'
 
         # Create Teardown button
         self.teardown = Button(self.master, width=20, padx=3, pady=3)
         self.teardown["text"] = "Teardown"
+        self.teardown["background"] = 'red'
         self.teardown["command"] = self.teardownMovie
         self.teardown.grid(row=1, column=3, padx=2, pady=2)
 
@@ -106,7 +113,7 @@ class Client:
         self.fps.grid(row=2, column=0, padx=2, pady=2)
         self.fps["font"] = "Helvetica"
 
-
+        threading.Thread(target=self.buttonController).start()
         # self.file = Label(self.master, width=20, padx=3, pady=3)
         # self.file["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / (self.frameNbr + 0.00001)))
         # # self.setup["command"] = self.setupMovie
@@ -187,11 +194,11 @@ class Client:
     def listenRtp(self):
         """Listen for RTP packets."""
         # TODO
-        self.startTime = time.time()
-        self.endTime = time.time()
+        startTime = time.time()
+        endTime = time.time()
         while True:
             try:
-                self.startTime = time.time()
+                startTime = time.time()
                 data, addr = self.rtpSocket.recvfrom(20480)
 
                 if data:
@@ -216,9 +223,9 @@ class Client:
                         # frameDiff = currFrameNbr - self.frameNbr
                         self.frameNbr = currFrameNbr
                         self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
-                    self.endTime = time.time()
+                    endTime = time.time()
                     self.loss_rate["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / self.frameNbr))
-                    self.fps["text"] = "FPS: {}".format(int(1/(self.endTime - self.startTime)))
+                    self.fps["text"] = "FPS: {}".format(int(1/(endTime - startTime)))
             except:
                 # Stop listening upon requesting PAUSE or TEARDOWN
                 print("Didn't receive data!")
@@ -472,6 +479,7 @@ class Client:
         self.pauseMovie()
         if tkinter.messagebox.askokcancel("Quit?", "Are you sure you want to quit?"):
             self.sendRtspRequest(self.TEARDOWN)
+            self.buttonEvent.clear()
             self.playEvent.set()
             self.setupEvent.set()
             self.master.destroy()  # Close the gui window
@@ -487,11 +495,30 @@ class Client:
             except OSError:
                 pass
             print("Exit")
-            print("self.setupEvent.isSet() = ", self.setupEvent.isSet())
-
             sys.exit(0)
 
         else:  # When the user presses cancel, resume playing.
             print("Playing Movie")
             threading.Thread(target=self.listenRtp).start()
             self.sendRtspRequest(self.PLAY)
+
+    def buttonController(self):
+        while True:
+            if self.buttonEvent.isSet():
+                if not self.fileName == self.varList.get():
+                    self.start["state"] = 'disabled'
+                    self.pause["state"] = 'disabled'
+                    self.browse["state"] = 'normal'
+                else:
+                    self.start["state"] = 'normal'
+                    self.pause["state"] = 'normal'
+                    self.browse["state"] = 'disabled'
+
+                if self.requestSent == self.PLAY:
+                    self.dropbar["state"] = "disabled"
+                else:
+                    self.dropbar["state"] = "normal"
+            else:
+                print("thread dies")
+                break
+

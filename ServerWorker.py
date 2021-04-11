@@ -2,6 +2,7 @@ import random, math
 import time
 from random import randint
 import sys, traceback, threading, socket
+import os
 
 from VideoStream import VideoStream
 from RtpPacket import RtpPacket
@@ -12,6 +13,7 @@ class ServerWorker:
     PLAY = 'PLAY'
     PAUSE = 'PAUSE'
     TEARDOWN = 'TEARDOWN'
+    LIST = 'LIST'
 
     INIT = 0
     READY = 1
@@ -21,6 +23,7 @@ class ServerWorker:
     OK_200 = 0
     FILE_NOT_FOUND_404 = 1
     CON_ERR_500 = 2
+    LIST_OK_200 = 3
 
     clientInfo = {}
 
@@ -54,11 +57,28 @@ class ServerWorker:
         # Get the RTSP sequence number
         seq = request[1].split(' ')
 
+        # Process LIST request
+        if requestType == self.LIST:
+            fileList = []
+            for file in os.listdir("./"):
+                if file.endswith(".mjpeg") or file.endswith(".Mjpeg"):
+                    fileList.append(file)
+            print("HEYYYYYYYYYYYYYYYYYYYYYYYYY", fileList)
+            reply = ""
+            for file in fileList:
+                reply += file + ","
+            self.replyRtsp(self.LIST_OK_200, reply)
+
         # Process SETUP request
         if requestType == self.SETUP:
             if self.state == self.INIT:
                 # Update state
                 print("SETUP Request received\n")
+                fileList = []
+                for file in os.listdir("./"):
+                    if file.endswith(".mjpeg") or file.endswith(".Mjpeg"):
+                        fileList.append(file)
+                print("HEYYYYYYYYYYYYYYYYYYYYYYYYY", fileList)
 
                 try:
 
@@ -183,6 +203,12 @@ class ServerWorker:
 
     def replyRtsp(self, code, seq):
         """Send RTSP reply to the client."""
+        if code == self.LIST_OK_200:
+            reply = seq
+            connSocket = self.clientInfo['rtspSocket'][0]
+            reply_byte = reply.encode()  # An
+            connSocket.send(reply_byte)
+
         if code == self.OK_200:
             # print "200 OK"
             reply = 'RTSP/1.0 200 OK\nCSeq: ' + seq + '\nSession: ' + str(self.clientInfo['session'])

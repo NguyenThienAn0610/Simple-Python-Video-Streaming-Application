@@ -3,6 +3,7 @@ import tkinter.messagebox
 import tkinter.filedialog
 from PIL import Image, ImageTk
 import socket, threading, sys, traceback, os
+import time
 
 from RtpPacket import RtpPacket
 
@@ -18,6 +19,7 @@ class Client:
     READY = 1
     PLAYING = 2
     SWITCHING = 3
+    # LISTING = 4
     state = INIT
 
     SETUP = 0
@@ -25,6 +27,7 @@ class Client:
     PAUSE = 2
     TEARDOWN = 3
     SWITCH = 4
+    LIST = 5
 
     counter = 0
 
@@ -36,6 +39,7 @@ class Client:
         self.serverPort = int(serverport)
         self.rtpPort = int(rtpport)
         self.fileName = filename
+        self.fileList = ""
         self.rtspSeq = 0
         self.sessionId = 0
         self.requestSent = -1
@@ -43,6 +47,7 @@ class Client:
         self.connectToServer()
         self.frameNbr = 0
         self.rtpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sendRtspRequest(self.LIST)
         self.setupEvent = threading.Event()
         self.playEvent = threading.Event()
         self.createWidgets()
@@ -50,9 +55,9 @@ class Client:
     # THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI
     def createWidgets(self):
         """Build GUI."""
-        # Create Setup button
+        # Create Loss rate display
         self.loss_rate = Label(self.master, width=20, padx=3, pady=3)
-        self.loss_rate["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / (self.frameNbr + 0.00001)))
+        self.loss_rate["text"] = "Loss rate: {: .02f}%".format(0)
         # self.setup["command"] = self.setupMovie
         self.loss_rate.grid(row=1, column=0, padx=2, pady=2)
         self.loss_rate["font"] = "Helvetica"
@@ -81,11 +86,29 @@ class Client:
 
         # Create browse button
         self.browse = Button(self.master, width=20, padx=3, pady=3)
+        # self.browse["activebackground"] = 'yellow'
+        # self.browse["highlightcolor"] = 'cyan'
         self.browse["text"] = "Switch"
         self.browse["command"] = self.browseMovie
-        self.browse.grid(row=1, column=4, sticky=W + E + N + S, padx=2, pady=2)
+        self.browse.grid(row=2, column=1, sticky=W + E + N + S, padx=2, pady=2)
 
         # # Create list for browsed file
+        ...
+        # Dropbar menu
+        self.varList = StringVar(self.master)
+        self.varList.set(self.fileName)
+        print(*self.fileList)
+        self.dropbar = OptionMenu(self.master, self.varList, *self.fileList)
+        self.dropbar.grid(row=2, column=2, sticky=W + E + N + S, padx=2, pady=2)
+
+        # Create FPS display
+        self.fps = Label(self.master, width=20, padx=3, pady=3)
+        self.fps["text"] = "FPS: {}%".format(0)
+        # self.setup["command"] = self.setupMovie
+        self.fps.grid(row=2, column=0, padx=2, pady=2)
+        self.fps["font"] = "Helvetica"
+
+
         # self.file = Label(self.master, width=20, padx=3, pady=3)
         # self.file["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / (self.frameNbr + 0.00001)))
         # # self.setup["command"] = self.setupMovie
@@ -94,13 +117,14 @@ class Client:
 
     def browseMovie(self):
         self.teardownMovie()
-        self.fileName = tkinter.filedialog.askopenfilename(initialdir="./", title="Select a File",
-                                   filetypes=(("MJPEG files",
-                                               "*.mjpeg*"),
-                                              ("all files",
-                                               "*.*")))
-        self.fileName = self.fileName.split('/')[-1]
-        print("Browsed file name", self.fileName)
+        # self.fileName = tkinter.filedialog.askopenfilename(initialdir="./", title="Select a File",
+        #                            filetypes=(("MJPEG files",
+        #                                        "*.mjpeg*"),
+        #                                       ("all files",
+        #                                        "*.*")))
+        # self.fileName = self.fileName.split('/')[-1]
+        print("Browsed file name", self.varList.get())
+        self.fileName = self.varList.get()
 
     def setupMovie(self):
         """Setup button handler."""
@@ -165,9 +189,11 @@ class Client:
     def listenRtp(self):
         """Listen for RTP packets."""
         # TODO
-
+        self.startTime = time.time()
+        self.endTime = time.time()
         while True:
             try:
+                self.startTime = time.time()
                 data, addr = self.rtpSocket.recvfrom(20480)
 
                 if data:
@@ -187,11 +213,14 @@ class Client:
                         traceback.print_exc(file=sys.stdout)
                         print('-' * 60)
 
+                    frameDiff = 1
                     if currFrameNbr > self.frameNbr:  # Discard the late packet
+                        frameDiff = currFrameNbr - self.frameNbr
                         self.frameNbr = currFrameNbr
                         self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
-
+                    self.endTime = time.time()
                     self.loss_rate["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / self.frameNbr))
+                    self.fps["text"] = "FPS: {}".format(int(frameDiff/(self.endTime - self.startTime)))
             except:
                 # Stop listening upon requesting PAUSE or TEARDOWN
                 print("Didn't receive data!")
@@ -260,8 +289,17 @@ class Client:
         # TO COMPLETE
         # -------------
 
+        # Get file list request
+        if requestCode == self.LIST:
+            threading.Thread(target=self.recvRtspReply).start()
+            request = "LIST " + "" + "\n" + str(self.rtspSeq) + "\n" + " RTSP/1.0 RTP/UDP " + str(
+                self.rtpPort)
+            request_byte = request.encode()  # An
+            self.rtspSocket.send(request_byte)
+            self.requestSent = self.LIST
+
         # Setup request
-        if requestCode == self.SETUP and self.state == self.INIT:
+        elif requestCode == self.SETUP and self.state == self.INIT:
             threading.Thread(target=self.recvRtspReply).start()
             # Update RTSP sequence number.
             # ...
@@ -323,7 +361,6 @@ class Client:
             self.rtspSocket.send(request_byte)
             print('-' * 60 + "\nTEARDOWN request sent to Server...\n" + '-' * 60)
             # Keep track of the sent request.
-            # self.requestSent = ...
             self.requestSent = self.TEARDOWN
 
         else:
@@ -337,7 +374,11 @@ class Client:
         # TODO
         while True:
             try:
+                # TODO
                 reply = self.rtspSocket.recv(1024)
+                if self.requestSent == self.LIST:
+                    self.fileList = reply.decode().split(',')[:-1]
+                    break
 
                 if reply:
                     self.parseRtspReply(reply)

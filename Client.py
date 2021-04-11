@@ -113,7 +113,7 @@ class Client:
         self.fps.grid(row=2, column=0, padx=2, pady=2)
         self.fps["font"] = "Helvetica"
 
-        threading.Thread(target=self.buttonController).start()
+        threading.Thread(target=self.buttonController, daemon=True).start()
         # self.file = Label(self.master, width=20, padx=3, pady=3)
         # self.file["text"] = "Loss rate: {: .02f}%".format(100 * float(self.counter / (self.frameNbr + 0.00001)))
         # # self.setup["command"] = self.setupMovie
@@ -188,7 +188,7 @@ class Client:
             print("Playing Movie")
             self.playEvent.clear()
             self.setupEvent.clear()
-            threading.Thread(target=self.listenRtp).start()
+            threading.Thread(target=self.listenRtp, daemon=True).start()
             self.sendRtspRequest(self.PLAY)
 
     def listenRtp(self):
@@ -296,7 +296,7 @@ class Client:
 
         # Get file list request
         if requestCode == self.LIST:
-            threading.Thread(target=self.recvRtspReply).start()
+            threading.Thread(target=self.recvRtspReply, daemon=True).start()
             request = "LIST " + "" + "\n" + str(self.rtspSeq) + "\n" + " RTSP/1.0 RTP/UDP " + str(
                 self.rtpPort)
             request_byte = request.encode()  # An
@@ -305,7 +305,7 @@ class Client:
 
         # Setup request
         elif requestCode == self.SETUP and self.state == self.INIT:
-            threading.Thread(target=self.recvRtspReply).start()
+            threading.Thread(target=self.recvRtspReply, daemon=True).start()
             # Update RTSP sequence number.
             # ...
             self.rtspSeq = 1
@@ -478,8 +478,8 @@ class Client:
         # TODO
         self.pauseMovie()
         if tkinter.messagebox.askokcancel("Quit?", "Are you sure you want to quit?"):
-            self.sendRtspRequest(self.TEARDOWN)
             self.buttonEvent.clear()
+            self.sendRtspRequest(self.TEARDOWN)
             self.playEvent.set()
             self.setupEvent.set()
             self.master.destroy()  # Close the gui window
@@ -494,17 +494,16 @@ class Client:
                 # os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT)  # Delete the cache image from video
             except OSError:
                 pass
-            print("Exit")
             sys.exit(0)
 
         else:  # When the user presses cancel, resume playing.
             print("Playing Movie")
-            threading.Thread(target=self.listenRtp).start()
+            threading.Thread(target=self.listenRtp, daemon=True).start()
             self.sendRtspRequest(self.PLAY)
 
     def buttonController(self):
         while True:
-            if self.buttonEvent.isSet():
+            if self.buttonEvent.wait(1):
                 if not self.fileName == self.varList.get():
                     self.start["state"] = 'disabled'
                     self.pause["state"] = 'disabled'
@@ -519,6 +518,4 @@ class Client:
                 else:
                     self.dropbar["state"] = "normal"
             else:
-                print("thread dies")
                 break
-

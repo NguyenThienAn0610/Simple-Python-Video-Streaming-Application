@@ -44,10 +44,13 @@ class ServerWorker:
         """Receive RTSP request from the client."""
         connSocket = self.clientInfo['rtspSocket'][0]
         while True:
-            data = connSocket.recv(256)
-            if data:
-                print('-' * 60 + "\nData received\n" + '-' * 60)
-                self.processRtspRequest(data)
+            try:
+                data = connSocket.recv(256)
+                if data:
+                    print('-' * 60 + "\nData received\n" + '-' * 60)
+                    self.processRtspRequest(data)
+            except ConnectionResetError:
+                break
 
     # ---------------------------------------------------
     def getFrameNum(self, filename):
@@ -176,7 +179,7 @@ class ServerWorker:
             jit = jit / 1000
 
             # self.clientInfo['event'].wait(0.05 + jit)
-            self.clientInfo['event'].wait(0.05)
+            self.clientInfo['event'].wait(0.005)
             jit = jit + 0.020
 
             # Stop sending if request is PAUSE or TEARDOWN

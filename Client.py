@@ -332,7 +332,6 @@ class Client:
             # Update RTSP sequence number.
             # ...
             self.rtspSeq = 1
-
             # Write the RTSP request to be sent.
             # request = ...
             request = "SETUP " + str(self.fileName) + "\n" + str(self.rtspSeq) + "\n" + " RTSP/1.0 RTP/UDP " + str(
@@ -526,7 +525,8 @@ class Client:
                 # os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT)  # Delete the cache image from video
             except OSError:
                 pass
-            sys.exit(0)
+            # sys.exit(0)
+            os._exit(0)
 
         else:  # When the user presses cancel, resume playing.
             print("Playing Movie")

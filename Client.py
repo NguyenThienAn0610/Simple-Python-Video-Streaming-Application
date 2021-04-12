@@ -78,18 +78,21 @@ class Client:
         # Create Play button
         self.start = Button(self.master, width=20, padx=3, pady=3)
         self.start["text"] = "Play"
+        self.start["background"] = 'green'
         self.start["command"] = self.playMovie
         self.start.grid(row=2, column=1, padx=2, pady=2)
 
         # Create Pause button
         self.pause = Button(self.master, width=20, padx=3, pady=3)
         self.pause["text"] = "Pause"
+        self.pause["background"] = 'yellow'
         self.pause["command"] = self.pauseMovie
         self.pause.grid(row=2, column=2, padx=2, pady=2)
 
         # Create Teardown button
         self.teardown = Button(self.master, width=20, padx=3, pady=3)
         self.teardown["text"] = "Teardown"
+        self.teardown["background"] = 'red'
         self.teardown["command"] = self.teardownMovie
         self.teardown.grid(row=2, column=3, padx=2, pady=2)
 
@@ -118,7 +121,7 @@ class Client:
         self.describe["command"] = self.describeMovie
         self.describe.grid(row=3, column=3, padx=2, pady=2)
 
-        threading.Thread(target=self.buttonController).start()
+        threading.Thread(target=self.buttonController, daemon=True).start()
 
     def browseMovie(self):
         self.teardownMovie()
@@ -174,6 +177,8 @@ class Client:
             self.setupEvent.clear()
             self.timeInitiated = str(datetime.datetime.now())
             self.sendRtspRequest(self.SETUP)
+            while self.state != self.READY:
+                pass
             # self.playMovie()
         # TODO
         if self.state == self.READY:
@@ -500,7 +505,6 @@ class Client:
                 pass
             print("Exit")
             print("self.setupEvent.isSet() = ", self.setupEvent.isSet())
-
             sys.exit(0)
 
         else:  # When the user presses cancel, resume playing.
@@ -524,6 +528,11 @@ class Client:
                     self.dropbar["state"] = "disabled"
                 else:
                     self.dropbar["state"] = "normal"
+
+                if self.requestSent == self.PAUSE:
+                    self.describe["state"] = "normal"
+                else:
+                    self.describe["state"] = "disabled"
             else:
                 print("thread dies")
                 break

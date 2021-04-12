@@ -160,7 +160,8 @@ class ServerWorker:
             jit = math.floor(random.uniform(-13, 5.99))
             jit = jit / 1000
 
-            self.clientInfo['event'].wait(0.05 + jit)
+            # self.clientInfo['event'].wait(0.05 + jit)
+            self.clientInfo['event'].wait(0.01)
             jit = jit + 0.020
 
             # Stop sending if request is PAUSE or TEARDOWN

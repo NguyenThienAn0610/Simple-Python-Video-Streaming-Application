@@ -1,5 +1,6 @@
 import sys
-from tkinter import Tk
+from tkinter import *
+from tkinter.ttk import *
 from Client import Client
 
 # Hello
@@ -17,5 +18,7 @@ if __name__ == "__main__":
 
 	# Create a new client
 	app = Client(root, serverAddr, serverPort, rtpPort, fileName)
+	logo = PhotoImage(file = "LogoBK.png")
+	app.master.iconphoto(False, logo)
 	app.master.title("RTPClient")
 	root.mainloop()

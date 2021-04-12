@@ -8,13 +8,15 @@ class VideoStream:
             print("read " + filename + " error")
             raise IOError
         self.frameNum = 0
+        self.frameLength = 0
 
     def nextFrame(self):
         """Get next frame."""
         data = self.file.read(5)  # Get the framelength from the first 5 bytes
         data = bytearray(data)
         if data:
-            framelength = int(data)#final_data_int/8  # xx bytes
+            framelength = int(data) # xx bytes
+            self.frameLength = framelength
             # Read the current frame
             frame = self.file.read(framelength)
             if len(frame) != framelength:
@@ -22,6 +24,10 @@ class VideoStream:
             self.frameNum += 1
             print('-' * 10 + "\nNext Frame (#" + str(self.frameNum) + ") length:" + str(framelength) + "\n" + '-' * 10)
             return frame
+
+    def previousFrame(self):
+        """Get previous frame"""
+
 
     def frameNbr(self):
         """Get frame number."""

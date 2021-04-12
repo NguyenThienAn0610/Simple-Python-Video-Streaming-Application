@@ -26,6 +26,8 @@ class Client:
     SWITCH = 4
     LIST = 5
     DESCRIBE = 6
+    FORWARD = 7
+    BACKWARD = 8
 
     counter = 0
 
@@ -62,12 +64,12 @@ class Client:
 
         # Create a label to display the movie
         self.label = Label(self.master, height=19)
-        self.label.grid(row=0, column=0, columnspan=4, sticky=W + E + N + S, padx=5, pady=5)
+        self.label.grid(row=0, column=0, columnspan=5, sticky=W + E + N + S, padx=5, pady=5)
 
         # Create Progress bar
         self.progressbar = ttk.Progressbar(self.master, orient =  HORIZONTAL, length = 100, mode = 'determinate')
         self.progressbar['value'] = 0
-        self.progressbar.grid(row=1, column=0, columnspan=4, sticky=W + E + N + S, padx=2, pady=2)
+        self.progressbar.grid(row=1, column=0, columnspan=5, sticky=W + E + N + S, padx=2, pady=2)
 
         # Create Loss rate display
         self.loss_rate = Label(self.master, width=20, padx=3, pady=3)
@@ -96,6 +98,12 @@ class Client:
         self.teardown["command"] = self.teardownMovie
         self.teardown.grid(row=2, column=3, padx=2, pady=2)
 
+        # Create Describe button
+        self.describe = Button(self.master, width=20, padx=3, pady=3, relief = RIDGE)
+        self.describe["text"] = "Describe"
+        self.describe["command"] = self.describeMovie
+        self.describe.grid(row=2, column=4, padx=2, pady=2)
+
         # Create FPS display
         self.fps = Label(self.master, width=20, padx=3, pady=3)
         self.fps["text"] = "FPS: {}%".format(0)
@@ -115,11 +123,17 @@ class Client:
         self.dropbar = OptionMenu(self.master, self.varList, *self.fileList)
         self.dropbar.grid(row=3, column=2, sticky=W + E + N + S, padx=2, pady=2)
 
-        # Create Describe button
-        self.describe = Button(self.master, width=20, padx=3, pady=3, relief = RIDGE, cursor = "cross")
-        self.describe["text"] = "Describe"
-        self.describe["command"] = self.describeMovie
-        self.describe.grid(row=3, column=3, padx=2, pady=2)
+        # Create Forward button
+        self.forward = Button(self.master, width=20, padx=3, pady=3)
+        self.forward["text"] = "Forward"
+        self.forward["command"] = self.forwardMovie
+        self.forward.grid(row=3, column=3, padx=2, pady=2)
+
+        # Create Backward button
+        self.backward = Button(self.master, width=20, padx=3, pady=3)
+        self.backward["text"] = "Backward"
+        self.backward["command"] = self.backwardMovie
+        self.backward.grid(row=3, column=4, padx=2, pady=2)
 
         threading.Thread(target=self.buttonController, daemon=True).start()
 
@@ -197,11 +211,19 @@ class Client:
             description.write("File name: " + self.fileName + "\n" + "RTP Port: "
                                 + str(self.rtpPort) + "\n" + "RTSP protocol version: 1.0\n"
                                 + "Transport layer protocol: UDP\n" + "Time started: " + self.timeInitiated + "\n"
-                                + "Video weight: " + self.videoWeight + " Bytes\n" + "\nCurrent frame: " + str(self.frameNbr) + "\nTotal frame: " + str(self.totalFrame))
+                                + "Video weight: " + self.videoWeight + " KBytes\n" + "\nCurrent frame: " + str(self.frameNbr) + "\nTotal frame: " + str(self.totalFrame))
             tkinter.messagebox.showinfo('Description', "File name: "
                                         + self.fileName + "\n" + "RTP Port: " + str(self.rtpPort) + "\n" + "RTSP protocol version: 1.0\n"
                                         + "Transport layer protocol: UDP\n" + "Time started: " + self.timeInitiated + '\n'
-                                        + "Video weight: " + self.videoWeight + " Bytes\n" + "Current frame: " + str(self.frameNbr) + "\nTotal frame: " + str(self.totalFrame))
+                                        + "Video weight: " + self.videoWeight + " KBytes\n" + "Current frame: " + str(self.frameNbr) + "\nTotal frame: " + str(self.totalFrame))
+
+    def forwardMovie(self):
+        if self.state == self.READY:
+            self.sendRtspRequest(self.FORWARD)
+
+    def backwardMovie(self):
+        if self.state == self.READY:
+            self.sendRtspRequest(self.BACKWARD)
 
     def listenRtp(self):
         """Listen for RTP packets."""
@@ -219,18 +241,17 @@ class Client:
                     try:
                         if self.frameNbr + 1 != rtpPacket.seqNum():
                             self.counter += 1
+                            print("self.frameNbr:", self.frameNbr)
+                            print("rtpPacket.seqNum():", rtpPacket.seqNum())
                             print('!' * 60 + "\nPACKET LOSS\n" + '!' * 60)
                         currFrameNbr = rtpPacket.seqNum()
-                    # version = rtpPacket.version()
                     except:
                         print("seqNum() error")
                         print('-' * 60)
                         traceback.print_exc(file=sys.stdout)
                         print('-' * 60)
 
-                    # frameDiff = 1
-                    if currFrameNbr > self.frameNbr:  # Discard the late packet
-                        # frameDiff = currFrameNbr - self.frameNbr
+                    if currFrameNbr != self.frameNbr:  # Discard the late packet
                         self.frameNbr = currFrameNbr
                         self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
                     endTime = time.time()
@@ -297,7 +318,6 @@ class Client:
         # -------------
         # TO COMPLETE
         # -------------
-
         # Get file list request
         if requestCode == self.LIST:
             threading.Thread(target=self.recvRtspReply).start()
@@ -306,7 +326,6 @@ class Client:
             request_byte = request.encode()  # An
             self.rtspSocket.send(request_byte)
             self.requestSent = self.LIST
-
         # Setup request
         elif requestCode == self.SETUP and self.state == self.INIT:
             threading.Thread(target=self.recvRtspReply).start()
@@ -323,7 +342,6 @@ class Client:
             # Keep track of the sent request.
             # self.requestSent = ...
             self.requestSent = self.SETUP
-
         # Play request
         elif requestCode == self.PLAY and self.state == self.READY:
             # Update RTSP sequence number.
@@ -338,7 +356,6 @@ class Client:
             # Keep track of the sent request.
             # self.requestSent = ...
             self.requestSent = self.PLAY
-
         # Pause request
         elif requestCode == self.PAUSE and self.state == self.PLAYING:
             # Update RTSP sequence number.
@@ -353,11 +370,7 @@ class Client:
             # Keep track of the sent request.
             # self.requestSent = ...
             self.requestSent = self.PAUSE
-
-        # Resume request
-
         # Teardown request
-        # elif requestCode == self.TEARDOWN and not self.state == self.INIT:
         elif requestCode == self.TEARDOWN:
             # Update RTSP sequence number.
             # ...
@@ -370,7 +383,7 @@ class Client:
             print('-' * 60 + "\nTEARDOWN request sent to Server...\n" + '-' * 60)
             # Keep track of the sent request.
             self.requestSent = self.TEARDOWN
-
+        # Describe request
         elif requestCode == self.DESCRIBE and self.state == self.READY:
             self.rtspSeq = self.rtspSeq + 1
             request = "DESCRIBE " + "\n" + str(self.rtspSeq)
@@ -378,7 +391,22 @@ class Client:
             self.rtspSocket.send(request_byte)
             print('-' * 60 + "\nDESCRIBE request sent...\n" + '-' * 60)
             self.requestSent = self.DESCRIBE
-
+        # Forward request
+        elif requestCode == self.FORWARD and self.state == self.READY:
+            self.rtspSeq = self.rtspSeq + 1
+            request = "FORWARD " + "\n" + str(self.rtspSeq)
+            request_byte = request.encode()  # An
+            self.rtspSocket.send(request_byte)
+            print('-' * 60 + "\nFORWARD request sent...\n" + '-' * 60)
+            self.requestSent = self.FORWARD
+        # Backward request
+        elif requestCode == self.BACKWARD and self.state == self.READY:
+            self.rtspSeq = self.rtspSeq + 1
+            request = "BACKWARD " + "\n" + str(self.rtspSeq)
+            request_byte = request.encode()  # An
+            self.rtspSocket.send(request_byte)
+            print('-' * 60 + "\nBACKWARD request sent...\n" + '-' * 60)
+            self.requestSent = self.BACKWARD
         else:
             return
 
@@ -395,10 +423,8 @@ class Client:
                 if self.requestSent == self.LIST:
                     self.fileList = reply.decode().split(',')[:-1]
                     break
-
                 if reply:
                     self.parseRtspReply(reply)
-
                 # Close the RTSP socket upon requesting Teardown
                 if self.requestSent == self.TEARDOWN:
                     self.rtspSocket.shutdown(socket.SHUT_RDWR)
@@ -435,7 +461,6 @@ class Client:
                         # self.state = ...
                         self.state = self.READY
                         # Open RTP port.
-                        # self.openRtpPort()
                         print("Setting Up RtpPort for Video Stream")
                         self.openRtpPort()
                         self.totalFrame = int(lines[4])
@@ -450,7 +475,6 @@ class Client:
                         # self.state = ...
                         # Flag the teardownAcked to close the socket.
                         self.teardownAcked = 1
-                        print("self.teardownAcked = 1")
                     elif self.requestSent == self.DESCRIBE:
                         self.videoWeight = lines[3]
 
@@ -473,8 +497,7 @@ class Client:
 
         try:
             # self.rtpSocket.connect(self.serverAddr,self.rtpPort)
-            self.rtpSocket.bind((self.serverAddr,
-                                 self.rtpPort))  # WATCH OUT THE ADDRESS FORMAT!!!!!  rtpPort# should be bigger than 1024
+            self.rtpSocket.bind((self.serverAddr, self.rtpPort))  #  rtpPort# should be bigger than 1024
             # self.rtpSocket.listen(5)
             print("Bind RtpPort Success")
 
@@ -503,8 +526,6 @@ class Client:
                 # os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT)  # Delete the cache image from video
             except OSError:
                 pass
-            print("Exit")
-            print("self.setupEvent.isSet() = ", self.setupEvent.isSet())
             sys.exit(0)
 
         else:  # When the user presses cancel, resume playing.
@@ -529,10 +550,14 @@ class Client:
                 else:
                     self.dropbar["state"] = "normal"
 
-                if self.requestSent == self.PAUSE:
+                if self.requestSent == self.PAUSE or self.requestSent == self.DESCRIBE or self.requestSent == self.FORWARD or self.requestSent == self.BACKWARD:
                     self.describe["state"] = "normal"
+                    self.forward["state"] = "normal"
+                    self.backward["state"] = "normal"
                 else:
                     self.describe["state"] = "disabled"
+                    self.forward["state"] = "disabled"
+                    self.backward["state"] = "disabled"
             else:
                 print("thread dies")
                 break

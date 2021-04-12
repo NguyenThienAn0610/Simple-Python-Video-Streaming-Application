@@ -1,7 +1,5 @@
 import sys
 from time import time
-# from VideoStream import VideoStream
-
 
 import VideoStream
 

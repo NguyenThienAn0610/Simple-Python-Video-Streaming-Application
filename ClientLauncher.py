@@ -3,8 +3,6 @@ from tkinter import *
 from tkinter.ttk import *
 from Client import Client
 
-# Hello
-
 if __name__ == "__main__":
 	try:
 		serverAddr = sys.argv[1]

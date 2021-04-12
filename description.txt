@@ -1,0 +1,9 @@
+File name: movie.mjpeg
+RTP Port: 5008
+RTSP protocol version: 1.0
+Transport layer protocol: UDP
+Time started: 2021-04-12 16:26:48.113174
+Video weight: 4169.8173828125 Bytes
+
+Current frame: 33
+Total frame: 500

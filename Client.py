@@ -30,6 +30,7 @@ class Client:
     BACKWARD = 8
 
     counter = 0
+    SKIP = 10
 
     # Initiation..
     def __init__(self, master, serveraddr, serverport, rtpport, filename):
@@ -49,6 +50,7 @@ class Client:
         self.rtpSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.timeInitiated = "0"
         self.videoWeight = "0"
+        self.skipFrame = 0
         self.totalFrame = 1
         self.sendRtspRequest(self.LIST)
         self.setupEvent = threading.Event()
@@ -127,13 +129,13 @@ class Client:
         self.forward = Button(self.master, width=20, padx=3, pady=3)
         self.forward["text"] = "Forward"
         self.forward["command"] = self.forwardMovie
-        self.forward.grid(row=3, column=3, padx=2, pady=2)
+        self.forward.grid(row=3, column=4, padx=2, pady=2)
 
         # Create Backward button
         self.backward = Button(self.master, width=20, padx=3, pady=3)
         self.backward["text"] = "Backward"
         self.backward["command"] = self.backwardMovie
-        self.backward.grid(row=3, column=4, padx=2, pady=2)
+        self.backward.grid(row=3, column=3, padx=2, pady=2)
 
         threading.Thread(target=self.buttonController, daemon=True).start()
 
@@ -200,6 +202,7 @@ class Client:
             print("Playing Movie")
             self.playEvent.clear()
             self.setupEvent.clear()
+            self.skipFrame = 0
             threading.Thread(target=self.listenRtp).start()
             self.sendRtspRequest(self.PLAY)
 
@@ -220,10 +223,16 @@ class Client:
     def forwardMovie(self):
         if self.state == self.READY:
             self.sendRtspRequest(self.FORWARD)
+            self.skipFrame += self.SKIP
+            self.progressbar['value'] = min(((self.frameNbr + self.skipFrame) * 100 / self.totalFrame), 100)
+            print((self.frameNbr + self.skipFrame) * 100 / self.totalFrame)
+
 
     def backwardMovie(self):
         if self.state == self.READY:
             self.sendRtspRequest(self.BACKWARD)
+            self.skipFrame -= self.SKIP
+            self.progressbar['value'] = max(((self.frameNbr + self.skipFrame) * 100 / self.totalFrame), 0)
 
     def listenRtp(self):
         """Listen for RTP packets."""

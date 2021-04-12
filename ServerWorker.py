@@ -89,16 +89,16 @@ class ServerWorker:
             if self.state == self.INIT:
                 # Update state
                 print("SETUP Request received\n")
-                fileList = []
+                # fileList = []
                 # ---------------------------------------------------
                 try:
                     self.clientInfo['totalFrame'] = self.getFrameNum(filename)
                 except Exception as e:
                     print(e)
                 # ---------------------------------------------------
-                for file in os.listdir("./"):
-                    if file.endswith(".mjpeg") or file.endswith(".Mjpeg"):
-                        fileList.append(file)
+                # for file in os.listdir("./"):
+                #     if file.endswith(".mjpeg") or file.endswith(".Mjpeg"):
+                #         fileList.append(file)
                 try:
                     self.clientInfo['videoStream'] = VideoStream(filename)
                     self.state = self.READY

@@ -409,9 +409,6 @@ class Client:
         else:
             return
 
-    # Send the RTSP request using rtspSocket.
-    # ...
-
     def recvRtspReply(self):
         """Receive RTSP reply from the server."""
         # TODO

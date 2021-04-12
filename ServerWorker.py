@@ -7,7 +7,6 @@ import os
 from VideoStream import VideoStream
 from RtpPacket import RtpPacket
 
-
 class ServerWorker:
     SETUP = 'SETUP'
     PLAY = 'PLAY'
@@ -28,6 +27,8 @@ class ServerWorker:
     CON_ERR_500 = 2
     LIST_OK_200 = 3
 
+    STREAM_SPEED = 0.005
+
     clientInfo = {}
 
     def __init__(self, clientInfo):
@@ -35,7 +36,6 @@ class ServerWorker:
         self.clientInfo['event'] = threading.Event()
         self.clientInfo['totalFrame'] = 0
         self.clientInfo['skipCounter'] = 0
-
 
     def run(self):
         threading.Thread(target=self.recvRtspRequest).start()
@@ -179,7 +179,7 @@ class ServerWorker:
             jit = jit / 1000
 
             # self.clientInfo['event'].wait(0.05 + jit)
-            self.clientInfo['event'].wait(0.005)
+            self.clientInfo['event'].wait(self.STREAM_SPEED)
             jit = jit + 0.020
 
             # Stop sending if request is PAUSE or TEARDOWN

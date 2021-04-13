@@ -58,6 +58,8 @@ class Client:
         self.buttonEvent = threading.Event()
         self.setupEvent.set()
         self.buttonEvent.set()
+        while len(self.fileList) == 0:
+            pass
         self.createWidgets()
 
     # THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI
@@ -195,7 +197,6 @@ class Client:
             self.sendRtspRequest(self.SETUP)
             while self.state != self.READY:
                 pass
-            # self.playMovie()
         # TODO
         if self.state == self.READY:
             # Create a new thread to listen for RTP packets
@@ -225,8 +226,6 @@ class Client:
             self.sendRtspRequest(self.FORWARD)
             self.skipFrame += self.SKIP
             self.progressbar['value'] = min(((self.frameNbr + self.skipFrame) * 100 / self.totalFrame), 100)
-            print((self.frameNbr + self.skipFrame) * 100 / self.totalFrame)
-
 
     def backwardMovie(self):
         if self.state == self.READY:
@@ -243,6 +242,7 @@ class Client:
             try:
                 startTime = time.time()
                 data, addr = self.rtpSocket.recvfrom(20480)
+                # data = self.rtpSocket.recv(20480)
                 if data:
                     rtpPacket = RtpPacket()
                     rtpPacket.decode(data)
@@ -502,7 +502,8 @@ class Client:
 
         try:
             # self.rtpSocket.connect(self.serverAddr,self.rtpPort)
-            self.rtpSocket.bind((self.serverAddr, self.rtpPort))  #  rtpPort# should be bigger than 1024
+            # self.rtpSocket.bind((self.serverAddr, self.rtpPort))  #  rtpPort# should be bigger than 1024
+            self.rtpSocket.bind(("", self.rtpPort))
             # self.rtpSocket.listen(5)
             print("Bind RtpPort Success")
 

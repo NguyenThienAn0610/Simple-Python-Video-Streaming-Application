@@ -62,10 +62,7 @@ class RtpPacket:
 
     def decode(self, byteStream):
         """Decode the RTP packet."""
-
-        # print byteStream[:HEADER_SIZE]
         self.header = bytearray(byteStream[:HEADER_SIZE])  # temporary solved
-
         self.payload = byteStream[HEADER_SIZE:]
 
     def version(self):

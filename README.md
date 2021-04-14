@@ -3,9 +3,13 @@ This is a Client - Server type of Video streaming application in Python. It is a
 
 ## How to use:
 ### In a terminal, start the server with the command line:
-    python Server.py server_port
+    python Server.py server_port server_address
 <blockquote>
-  Where <strong>server_port</strong> is the port your server listens to for incoming RTSP connections. The standard port is 554, but we need to use a port that is greater than 1024.
+  Where:
+  <ul>
+      <li><strong>server_port</strong> is the port your server listens to for incoming RTSP connections. The standard port is 554, but we need to use a port that is greater than 1024.</li>
+      <li><strong>server_address</strong> is the ip of the machine that the server is running on.</li>
+  </ul>
 </blockquote>
 
 ### In another terminal, we start a client by typing:
@@ -13,7 +17,7 @@ This is a Client - Server type of Video streaming application in Python. It is a
 <blockquote>
   Where:
   <ul>
-    <li><strong>server_host</strong> is the ip of  the machine that the server is running.</li>
+    <li><strong>server_host</strong> is the ip of the machine that the server is running on.</li>
     <li><strong>server_port</strong> is the port the client is listening on.</li>
     <li><strong>RTP_port</strong> is the port that the RTP packets are received.</li>
     <li><strong>video_file</strong> is the file you wish to watch (here we use a mjpeg file).</li>
